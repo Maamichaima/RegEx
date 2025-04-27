@@ -69,6 +69,33 @@ void parce_plus(std::deque<RegEx> &dq, char c)
 	}
 }
 
+void escapedCharacter(std::deque< std::deque<Element> >& C, char escapedChar) {
+    switch (escapedChar)
+    {
+        case 'd':
+            C.back().push_back(Element(DIGIT, '\0'));
+            break;
+        case 'D':
+            C.back().push_back(Element(NOTDIGIT, '\0'));
+            break;
+        case 'w':
+            C.back().push_back(Element(ALPHANUM, '\0'));
+            break;
+        case 'W':
+            C.back().push_back(Element(NOTALPHANUM, '\0'));
+            break;
+        case 's':
+            C.back().push_back(Element(WHITESPACE, '\0'));
+            break;
+        case 'S':
+            C.back().push_back(Element(NOTWHITESPACE, '\0'));
+            break;
+        default:
+            C.back().push_back(Element(LITTERAL, escapedChar));
+            break;
+    }
+}
+
 std::deque<RegEx> parce_expretion(std::string str)//p.**
 {
 	int i = 0;
@@ -85,6 +112,15 @@ std::deque<RegEx> parce_expretion(std::string str)//p.**
 			continue;
 		case '*':
 			parce_staret(dq);
+			i++;
+			continue;
+		case '\\':
+			if(i + 1 >= std.size())
+			{
+				std::cout << "eroor ?";
+				exit(1);
+			}
+			escapedCharacter(dq, str[i]);
 			i++;
 			continue;
 		case '?':
@@ -107,45 +143,77 @@ std::deque<RegEx> parce_expretion(std::string str)//p.**
 	return dq;
 }
 
-bool test(std::string str, std::deque<RegEx> dq)//a* 
+void print_stack(std::stack<BacktrackElement> backtrackStack)
+{
+	while(!backtrackStack.empty())
+	{
+		std::cout << "quantifier = " << backtrackStack.top().regex.quantifier 
+		<< ", content = " << backtrackStack.top().regex.content << " chartaken " << backtrackStack.top().charTaken << std::endl; 
+		backtrackStack.pop();
+	}
+}
+
+std::stack<BacktrackElement> backtrackStack;
+
+bool tryBacktrack(std::stack<BacktrackElement> &backtrackStack, size_t &index, std::deque<RegEx>::iterator &it)
+{
+	while (!backtrackStack.empty())
+	{
+		if (backtrackStack.top().isBacktrack && backtrackStack.top().charTaken)
+		{
+			backtrackStack.top().charTaken--;
+			index--;
+			return true;
+		}
+		else
+		{
+			index -= backtrackStack.top().charTaken;
+			backtrackStack.pop();
+			it--;
+		}
+	}
+	return false;
+}
+
+bool test(std::string str, std::deque<RegEx> dq)//. [] \d \s \w
 {
     size_t i = 0;
     size_t tmp = 0;
     std::deque<RegEx>::iterator it = dq.begin();
-	std::stack<BacktrackElement> backtrackStack;
 
 
     while (it != dq.end())
     {
 		if (i >= str.size())
 		{
-			//i--
+			if (tryBacktrack(backtrackStack, i, it))
+				continue ;
 			return false;
 		}
 		char c = str[i];
-		// char c = (i < str.size()) ? str[i] : '\0';
-		// std::cout << "char -> " << it->content << "\n";
         if (it->type == LITTERAL)
         {
             if (it->quantifier == EXACTLY_ONE)
             {
                 if (c != it->content)
 				{
-
+					if (tryBacktrack(backtrackStack, i, it))
+						continue ;
                     return false;
 				}
-				BacktrackStack.push({false, 1, *it});
+				backtrackStack.push({false, 1, *it});
                 i++;
                 it++;
             }
             else if (it->quantifier == ZERO_OR_MORE)
             {
 				int j = 0;
-				while (str[i] == it->content)
+				while (str[i] && str[i] == it->content)
 				{
 					j++;
 					i++;
 				}
+				backtrackStack.push({true, j, *it});
 				it++;
 				// if (backtrackStack.empty())
 				//newdq.push aq
@@ -160,7 +228,12 @@ bool test(std::string str, std::deque<RegEx> dq)//a*
             else if (it->quantifier == ZERO_OR_ONE)
             {
                 if (c == it->content)
+				{
+					backtrackStack.push({true, 1, *it});
                     i++;
+				}
+				else
+					backtrackStack.push({true, 0, *it});
                 it++;
             }
         }
@@ -177,16 +250,16 @@ bool test(std::string str, std::deque<RegEx> dq)//a*
 
 int main()
 {
-    std::string ex = "t*d";
+    std::string ex = "t?t*t";
     std::deque<RegEx> dq = parce_expretion(ex);
 
-	print(dq);
+	// print(dq);
 
-    std::string testStr = "ttttt";
+    std::string testStr = "t";
     if (test(testStr, dq))
         std::cout << "Matched!" << std::endl;
     else
         std::cout << "Not matched!" << std::endl;
-
+	print_stack(backtrackStack);
     return 0;
 }

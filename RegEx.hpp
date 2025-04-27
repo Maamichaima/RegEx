@@ -2,11 +2,22 @@
 
 #include <iostream>
 #include <deque>
+#include <stack>
+
 
 enum TokenType
 {
     ANYTHING,
-    LITTERAL
+    LITTERAL,
+
+	DIGIT,
+	NOTDIGIT,
+
+	WHITESPACE,
+	NOTWHITESPACE,
+
+	ALPHANUM,
+	NOTALPHANUM,
 };
 
 enum Quantifier
@@ -15,7 +26,6 @@ enum Quantifier
     ZERO_OR_MORE,
     ZERO_OR_ONE
 };
-
 
 
 class RegEx
