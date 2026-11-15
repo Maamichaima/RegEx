@@ -3,6 +3,7 @@
 #include <iostream>
 #include <deque>
 #include <stack>
+#include <cstdlib>
 
 
 enum TokenType
@@ -18,6 +19,7 @@ enum TokenType
 
 	ALPHANUM,
 	NOTALPHANUM,
+	CHARSET,
 };
 
 enum Quantifier
@@ -34,20 +36,18 @@ class RegEx
 		TokenType type;
 		Quantifier quantifier;
 		char content;
-		// RegEx();
+		std::string cc;
 		RegEx(char content, TokenType type);
+		RegEx(std::string cc, TokenType type);
+		RegEx(char content, std::string cc, TokenType type);
 };
 
 struct BacktrackElement
 {
+	BacktrackElement(bool b, int c, const RegEx& r): isBacktrack(b), charTaken(c), regex(r) {}
 	bool isBacktrack;
 	int charTaken;
 	RegEx regex;
 };
 
-// Element 1: content = g, quantifier = 0, type = 1
-// Element 2: content = g, quantifier = 1, type = 1
-// Element 3: content = b, quantifier = 0, type = 1
-// Element 4: content = h, quantifier = 0, type = 1
-// Element 5: content = s, quantifier = 0, type = 1
-// Element 6: content = d, quantifier = 2, type = 1
+bool isMatch(std::string ex, std::string testStr);
